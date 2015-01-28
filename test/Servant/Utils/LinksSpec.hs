@@ -1,7 +1,10 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 module Servant.Utils.LinksSpec where
+
+import GHC.Exts(Constraint)
 
 import Test.Hspec ( Spec, it, describe )
 
@@ -28,9 +31,9 @@ type NotALink = "hello" :> Capture "x" Bool :> Get Bool
 type NotALink2 = "hello" :> ReqBody 'True :> Get Bool
 
 data Proxy x = Proxy
-class ReflectT (x::Bool) where { reflected :: Proxy x -> Bool }
-instance ReflectT 'True where { reflected _ = True }
-instance ReflectT 'False where { reflected _ = False }
+class ReflectT (x::Constraint) where { reflected :: Proxy x -> Bool }
+instance ReflectT () where { reflected _ = True }
+instance ReflectT (True ~ False)  where { reflected _ = False }
 
 spec :: Spec
 spec = describe "Servant.API.Elem" $ do

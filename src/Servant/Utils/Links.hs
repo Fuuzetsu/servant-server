@@ -90,9 +90,11 @@ import Servant.API.Alternative ( type (:<|>) )
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
     Or () b       = ()
     Or a ()       = ()
+    Or a b        = (True ~ False)
 
 type family And (a :: Constraint)  (b :: Constraint) :: Constraint where
     And () () = ()
+    And a  b =  (a, b)
 
 type family IsElem' a s :: Constraint
 
@@ -108,7 +110,7 @@ type family IsElem a s :: Constraint where
     IsElem sa (MatrixParams x y :> sb)   = IsElem sa sb
     IsElem sa (MatrixFlag x :> sb)       = IsElem sa sb
     IsElem e e                           = ()
-    IsElem e a                           = IsElem' e a
+    IsElem e a                           = (True ~ False)
 
 type family IsLink'' l :: Constraint where
     IsLink'' (e :> Get x)    = IsLink' e
@@ -116,13 +118,16 @@ type family IsLink'' l :: Constraint where
     IsLink'' (e :> Put x)    = IsLink' e
     IsLink'' (e :> Delete)   = IsLink' e
     IsLink'' (e :> Raw)      = IsLink' e
+    IsLink'' e = (True ~ False)
 
 type family IsLink' e :: Constraint where
     IsLink' (f :: Symbol)  = ()
+    IsLink' g = (True ~ False)
 
 type family IsLink e :: Constraint where
     IsLink (a :> b)        = Or (And (IsLink' a) (IsLink'' b))
                                 (IsLink'' (a :> b))
+    IsLink x = (True ~ False)
 
 
 -- | The 'ValidLinkIn f s' constraint holds when 's' is an API that
@@ -131,7 +136,7 @@ class ValidLinkIn f s where
     mkLink :: f -> s -> Link  -- ^ This function will only typecheck if `f`
                               -- is an URI within `s`
 
-instance ( IsElem f s 
+instance ( IsElem f s
          , IsLink f
          , VLinkHelper f) => ValidLinkIn f s where
     mkLink _ _ = Link (vlh (Proxy :: Proxy f))
