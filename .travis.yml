@@ -21,7 +21,7 @@ before_install:
         $CABAL install happy alex
         export PATH=$HOME/.cabal/bin:$PATH
     fi
- - git clone https://github.com/haskell-servant/servant.git
+ - git clone -b servant-0.2 https://github.com/haskell-servant/servant.git
  - cabal sandbox init
  - cabal sandbox add-source servant
 
