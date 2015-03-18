@@ -8,7 +8,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant.Server.Internal where
 
-import Control.Applicative ((<$>))
+import Control.Applicative
 import Control.Monad.Trans.Either (EitherT, runEitherT)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
@@ -278,8 +278,8 @@ instance ( AllCTRender ctypes a
             let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
               Nothing -> responseLBS (mkStatus 406 "Not Acceptable") [] ""
-              Just (contentT, body) -> responseLBS ok200 [ ("Content-Type"
-                                                         , cs contentT)] body
+              Just (contentT, (hs, body)) -> responseLBS ok200 (("Content-Type" , cs contentT):hs)
+                                                               body
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
     | pathIsEmpty request && requestMethod request /= methodGet =
@@ -356,8 +356,8 @@ instance ( AllCTRender ctypes a
             let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
               Nothing -> responseLBS (mkStatus 406 "") [] ""
-              Just (contentT, body) -> responseLBS status201 [ ("Content-Type"
-                                                             , cs contentT)] body
+              Just (contentT, (hs, body)) -> responseLBS status201 (("Content-Type" , cs contentT):hs)
+                                                                   body
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
     | pathIsEmpty request && requestMethod request /= methodPost =
@@ -402,8 +402,8 @@ instance ( AllCTRender ctypes a
             let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
               Nothing -> responseLBS (mkStatus 406 "") [] ""
-              Just (contentT, body) -> responseLBS status200 [ ("Content-Type"
-                                                             , cs contentT)] body
+              Just (contentT, (hs, body)) -> responseLBS status200 (("Content-Type" , cs contentT):hs)
+                                                                   body
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
     | pathIsEmpty request && requestMethod request /= methodPut =
@@ -446,8 +446,8 @@ instance ( AllCTRender ctypes a
             let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
               Nothing -> responseLBS (mkStatus 406 "") [] ""
-              Just (contentT, body) -> responseLBS status200 [ ("Content-Type"
-                                                             , cs contentT)] body
+              Just (contentT, (hs, body)) -> responseLBS status200 (("Content-Type" , cs contentT):hs)
+                                                                   body
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
     | pathIsEmpty request && requestMethod request /= methodPatch =
@@ -742,7 +742,7 @@ instance ( AllCTUnrender list a, HasServer sublayout
     -- http://www.w3.org/2001/tag/2002/0129-mime
     let contentTypeH = fromMaybe "application/octet-stream"
                      $ lookup hContentType $ requestHeaders request
-    mrqbody <- handleCTypeH (Proxy :: Proxy list) (cs contentTypeH)
+    mrqbody <- handleCTypeH (Proxy :: Proxy list) (requestHeaders request) (cs contentTypeH)
            <$> lazyRequestBody request
     case mrqbody of
       Nothing -> respond . failWith $ UnsupportedMediaType
